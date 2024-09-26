@@ -57,7 +57,7 @@ class PointServiceTest {
     }
 
     @Test
-    @DisplayName("포인트 사용 시 사용 내역이 기록된다")
+    @DisplayName("포인트 사용 내역이 기록")
     public void usePoint_ShouldRecordHistory() throws Exception {
         // given
         long userId = 1L;
@@ -80,7 +80,7 @@ class PointServiceTest {
         verify(pointHistoryTable).insert(eq(userId), eq(amountToUse), eq(TransactionType.USE), anyLong());
     }
     @Test
-    @DisplayName("포인트가 부족하면 tException")
+    @DisplayName("포인트가 부족하면 PointException")
     public void usePoint_ShouldThrowException_WhenInsufficientBalance() throws Exception {
         // given
         long userId = 1L;
@@ -97,7 +97,40 @@ class PointServiceTest {
         verify(pointHistoryTable, never()).insert(anyLong(), anyLong(), any(), anyLong()); // 이력도 남지 않아야 함
     }
 
+    @Test
+    @DisplayName("포인트 조회 포인트 정보를 반환")
+    public void getPoint_ShouldReturnUserPoint() throws Exception {
+        // given
+        long userId = 1L;
+        long currentPoint = 1000L;
+        UserPoint userPoint = new UserPoint(userId, currentPoint, System.currentTimeMillis());
 
+        given(userPointTable.selectById(userId)).willReturn(userPoint);
+
+        // when
+        UserPoint result = pointService.getPoint(userId);
+
+        // then
+        assertThat(result).isEqualTo(userPoint);
+    }
+
+    @Test
+    @DisplayName("포인트 이력 조회  정보를 반환")
+    public void getHistory_ShouldReturnPointHistory() throws Exception {
+        // given
+        long userId = 1L;
+        List<PointHistory> historyList = new ArrayList<>();
+        historyList.add(new PointHistory(1,userId, 500L, TransactionType.CHARGE, System.currentTimeMillis()));
+
+        // 포인트 히스토리 조회 시 mock 데이터 반환 설정
+        given(pointHistoryTable.selectAllByUserId(userId)).willReturn(historyList);
+
+        // when
+        List<PointHistory> result = pointService.getHistory(userId);
+
+        // then
+        assertThat(result).isEqualTo(historyList);
+    }
 
 }
 

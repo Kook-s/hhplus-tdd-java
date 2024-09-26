@@ -67,4 +67,13 @@ public class PointService {
             lock.unlock();
         }
     }
+
+    public UserPoint getPoint(long userId) {
+        return userPointTable.selectById(userId);
+    }
+
+    public List<PointHistory> getHistory(long userId) {
+        return pointHistoryTable.selectAllByUserId(userId);
+    }
+
 }
