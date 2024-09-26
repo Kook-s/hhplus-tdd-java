@@ -55,7 +55,6 @@ class PointServiceTest {
         assertThat(updatedUserPoint.point()).isEqualTo(initialPoint + amountToCharge);
     }
 
-
 }
 
 
