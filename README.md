@@ -71,17 +71,3 @@ public UserPoint usePoint(long userId, long amount) {
 ```
 - 위의 코드에서는 lock.lock()과 lock.unlock()을 통해, 한 사용자의 usePoint 요청이 처리될 때 다른 요청이 동시에 실행되지 않도록 보장합니다. 따라서 여러 요청이 들어와도 각 사용자의 포인트 수정이 순차적으로 이루어집니다.
 
- 
- #### 커밋태그
-
-| 태그       | 설명                                 |
-|:---------|:----------------------------------------|
-| feat     | 새로운 기능 추가                          |
-| fix      | 버그 수정                                 |
-| refactor | 코드 리팩토링                             |
-| comment  | 주석 추가(코드 변경 X) 혹은 오타 수정      |
-| docs     | README와 같은 문서 수정     |
-| merge    | merge                                      |
-| rename   | 파일, 폴더 수정, 삭제 혹은 이동            |
-| report   | 해당 주차별 과제 등록 및 풀이               |
-| chore    | 설정 변경                                   |
