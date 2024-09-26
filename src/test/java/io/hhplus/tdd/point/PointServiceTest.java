@@ -14,6 +14,10 @@ import org.mockito.MockitoAnnotations;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static org.mockito.BDDMockito.*;
 import static org.assertj.core.api.Assertions.*;
@@ -130,6 +134,50 @@ class PointServiceTest {
 
         // then
         assertThat(result).isEqualTo(historyList);
+    }
+    @Test
+    @DisplayName("동시성 포인트 충전 테스트")
+    public void concurrentChargePoint_ShouldHandleConcurrency() throws Exception {
+        // given
+        long userId = 1L;
+        long initialPoint = 1000L;  // 초기 포인트
+        long amountToCharge = 100L;  // 각 스레드가 충전할 포인트
+        int threadCount = 10;  // 동시 실행할 스레드 수
+
+        UserPoint userPoint = new UserPoint(userId, initialPoint, System.currentTimeMillis());
+        given(userPointTable.selectById(userId)).willReturn(userPoint);
+
+        // 포인트 충전 후 mock 설정 (스레드 동시 실행 대비)
+        given(userPointTable.insertOrUpdate(eq(userId), anyLong()))
+                .willAnswer(invocation -> {
+                    Long chargedPoint = invocation.getArgument(1);
+                    return new UserPoint(userId, chargedPoint, System.currentTimeMillis());
+                });
+
+        // when
+        ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
+        CountDownLatch latch = new CountDownLatch(threadCount);
+
+        // 동시 실행: 여러 스레드가 동시에 포인트 충전을 수행
+        for (int i = 0; i < threadCount; i++) {
+            executorService.submit(() -> {
+                try {
+                    pointService.chargePoint(userId, amountToCharge);
+                } finally {
+                    latch.countDown(); // 각 스레드가 작업 완료 후 count down
+                }
+            });
+        }
+
+        latch.await(); // 모든 스레드가 완료될 때까지 대기
+        executorService.shutdown();
+        executorService.awaitTermination(5, TimeUnit.SECONDS);
+
+        // then
+        // 최종 포인트 검증: 1000 + (100 * 10) = 2000
+        verify(userPointTable, times(threadCount)).insertOrUpdate(eq(userId), anyLong());
+        UserPoint finalUserPoint = pointService.getPoint(userId);
+        assertThat(finalUserPoint.point()).isEqualTo(initialPoint + (amountToCharge * threadCount));
     }
 
 }
